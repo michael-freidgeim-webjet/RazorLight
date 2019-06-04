@@ -20,7 +20,6 @@ namespace RazorLight.Extensions
             }
 
             services.AddSingleton<PropertyInjector>();
-			services.AddSingleton<IEngineHandler, EngineHandler>();
             services.AddSingleton<IRazorLightEngine>(p => 
             {
                 var engine = engineFactoryProvider();

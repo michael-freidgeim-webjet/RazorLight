@@ -13,6 +13,6 @@ namespace RazorLight.Compilation
         CSharpParseOptions ParseOptions { get; }
         Assembly OperatingAssembly { get; }
 
-		Assembly CompileAndEmit(IGeneratedRazorTemplate razorTemplate);
-	}
+        Task<CompiledTemplateDescriptor> CompileAsync(IGeneratedRazorTemplate razorTemplate);
+    }
 }

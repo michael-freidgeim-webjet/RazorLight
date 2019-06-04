@@ -207,7 +207,7 @@ namespace RazorLight.Tests.Compilation
 		}
 
 		[Fact]
-		public void Throw_With_CompilationErrors_On_Failed_BuildAsync()
+		public async Task Throw_With_CompilationErrors_On_Failed_BuildAsync()
 		{
 			var compiler = new RoslynCompilationService(new DefaultMetadataReferenceManager(), Assembly.GetEntryAssembly());
 
@@ -217,14 +217,14 @@ namespace RazorLight.Tests.Compilation
 
 			try
 			{
-				compiler.CompileAndEmit(template);
+				await compiler.CompileAsync(template);
 			}
 			catch (TemplateCompilationException e)
 			{
 				ex = e;
 			}
 
-
+			
 			Assert.NotNull(ex);
 			Assert.NotEmpty(ex.CompilationErrors);
 			Assert.Equal(1, ex.CompilationErrors.Count);
@@ -235,9 +235,9 @@ namespace RazorLight.Tests.Compilation
 		{
 			var compiler = new RoslynCompilationService(new DefaultMetadataReferenceManager(), Assembly.GetEntryAssembly());
 
-			Func<Assembly> action = () => compiler.CompileAndEmit(null);
+			Func<Task> action = () => compiler.CompileAsync(null);
 
-			Assert.Throws<ArgumentNullException>(action);
+			Assert.ThrowsAsync<ArgumentNullException>(action);
 		}
 
 		private class TestGeneratedRazorTemplate : IGeneratedRazorTemplate

@@ -38,7 +38,7 @@ namespace RazorLight.Tests.Extensions
             services.AddRazorLight(() => 
             {
                 called = true;
-                return new RazorLightEngineBuilder().UseEmbeddedResourcesProject(typeof(Root).Assembly).Build();
+                return new RazorLightEngineBuilder().Build();
             });
 
             var provider = services.BuildServiceProvider();

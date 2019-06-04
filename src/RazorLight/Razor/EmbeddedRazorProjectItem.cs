@@ -7,21 +7,7 @@ namespace RazorLight.Razor
 {
     public class EmbeddedRazorProjectItem : RazorLightProjectItem
     {
-        private readonly string fullTemplateKey;
-
-		public EmbeddedRazorProjectItem(Assembly assembly, string rootNamespace, string key)
-		{
-			Assembly = assembly ?? throw new ArgumentNullException(nameof(assembly));
-			Key = key ?? throw new ArgumentNullException(nameof(key));
-
-			if(rootNamespace == null)
-			{
-				rootNamespace = "";
-			}
-
-			RootNamespace = rootNamespace;
-			fullTemplateKey = assembly.GetName().Name + (!string.IsNullOrEmpty(RootNamespace) ? $".{RootNamespace}" : "") + $".{key}";
-		}
+        private string fullTemplateKey;
 
         public EmbeddedRazorProjectItem(Type rootType, string key)
         {
@@ -36,16 +22,17 @@ namespace RazorLight.Razor
             }
 
             Key = key;
-            Assembly = rootType.GetTypeInfo().Assembly;
+            RootType = rootType;
+            Assembly = RootType.GetTypeInfo().Assembly;
 
-            fullTemplateKey = rootType.Namespace + "." + Key;
+            fullTemplateKey = RootType.Namespace + "." + Key;
         }
 
         public Assembly Assembly { get; set; }
 
-		public string RootNamespace { get; set; }
+        public Type RootType { get; set; }
 
-		public override string Key { get; }
+        public override string Key { get; }
 
         public override bool Exists
         {

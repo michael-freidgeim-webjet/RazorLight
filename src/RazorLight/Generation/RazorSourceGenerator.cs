@@ -11,21 +11,21 @@ namespace RazorLight.Generation
 {
     public class RazorSourceGenerator
     {
-        public RazorSourceGenerator(RazorEngine projectEngine, RazorLightProject project = null, ISet<string> namespaces = null)
+        public RazorSourceGenerator(RazorEngine engine, RazorLightProject project = null, ISet<string> namespaces = null)
         {
-            if(projectEngine == null)
+            if(engine == null)
             {
-                throw new ArgumentNullException(nameof(projectEngine));
+                throw new ArgumentNullException(nameof(engine));
             }
 
 			Namespaces = namespaces ?? new HashSet<string>();
 
-            ProjectEngine = projectEngine;
+            Engine = engine;
             Project = project;
             DefaultImports = GetDefaultImports();
         }
 
-        public RazorEngine ProjectEngine { get; set; }
+        public RazorEngine Engine { get; set; }
 
         public RazorLightProject Project { get; set; }
 
@@ -47,8 +47,8 @@ namespace RazorLight.Generation
 
 			if(Project == null)
 			{
-				string _message = $"Can not resolve a content for the template \"{key}\" as there is no project set. " +
-					"You can only render a template by passing it's content directly via string using corresponding function overload";
+				string _message = "Can not resolve a content for the template \"{0}\" as there is no project set." +
+					"You can only render a template by passing it's content directly via string using coresponding function overload";
 
 				throw new InvalidOperationException(_message);
 			}
@@ -71,11 +71,11 @@ namespace RazorLight.Generation
 
             if (!projectItem.Exists)
             {
-                throw new TemplateNotFoundException($"Project can not find template with key {projectItem.Key}");
+                throw new InvalidOperationException($"Project can not find template with key {projectItem.Key}");
             }
 
             RazorCodeDocument codeDocument = await CreateCodeDocumentAsync(projectItem);
-            ProjectEngine.Process(codeDocument);
+            Engine.Process(codeDocument);
 
             RazorCSharpDocument document = codeDocument.GetCSharpDocument();
             if (document.Diagnostics.Count > 0)

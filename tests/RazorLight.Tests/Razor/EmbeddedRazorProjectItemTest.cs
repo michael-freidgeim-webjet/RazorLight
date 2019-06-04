@@ -8,40 +8,27 @@ namespace RazorLight.Tests.Razor
 {
     public class EmbeddedRazorProjectItemTest
     {
-		[Fact]
-		public void Throws_On_Null_Assembly()
-		{
-			Assert.Throws<ArgumentNullException>(() => new EmbeddedRazorProjectItem(null, "namespace", "key"));
-		}
+        [Fact]
+        public void Thows_OnConstructor_NullParams()
+        {
+            Assert.Throws<ArgumentNullException>(() => new EmbeddedRazorProjectItem(null, "efewf"));
+            Assert.Throws<ArgumentNullException>(() => new EmbeddedRazorProjectItem(typeof(Root), null));
+        }
 
-		[Fact]
-		public void Throws_On_Null_Key()
-		{
-			Assert.Throws<ArgumentNullException>(() => new EmbeddedRazorProjectItem(typeof(Root).Assembly, "namespace", null));
-		}
+        [Fact]
+        public void Ensure_ConstructorParams_AreApplied()
+        {
+            string templateKey = "Assets.Embedded.Empty";
+            Type rootType = typeof(Root);
 
-		[Fact]
-		public void Null_Namespace_WillBe_Empty()
-		{
-			var item = new EmbeddedRazorProjectItem(typeof(Root).Assembly, null, "key");
+            var item = new EmbeddedRazorProjectItem(rootType, templateKey);
 
-			Assert.Equal("", item.RootNamespace);
-		}
+            Assert.Equal(item.Key, templateKey);
+            Assert.Equal(item.RootType, rootType);
+            Assert.Equal(item.Assembly, rootType.GetTypeInfo().Assembly);
+        }
 
-		//[Fact]
-		//public void Ensure_ConstructorParams_AreApplied()
-		//{
-		//    string templateKey = "Assets.Embedded.Empty";
-		//    Type rootType = typeof(Root);
-
-		//    var item = new EmbeddedRazorProjectItem(rootType, templateKey);
-
-		//    Assert.Equal(item.Key, templateKey);
-		//    Assert.Equal(item.RootType, rootType);
-		//    Assert.Equal(item.Assembly, rootType.GetTypeInfo().Assembly);
-		//}
-
-		[Fact]
+        [Fact]
         public void ReturnsExistsTrue_OnExistingTemplate()
         {
             string templateKey = "Assets.Embedded.Empty.cshtml";

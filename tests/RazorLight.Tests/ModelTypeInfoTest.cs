@@ -45,7 +45,7 @@ namespace RazorLight.Tests
             var model = new { Title = "Johny" };
             var info = new ModelTypeInfo(model.GetType());
 
-            Assert.Equal(typeof(ExpandoObject), info.TemplateType);
+            Assert.Equal(info.TemplateType, typeof(ExpandoObject));
         }
 
         [Fact]
@@ -53,7 +53,7 @@ namespace RazorLight.Tests
         {
             var info = new ModelTypeInfo(typeof(TestViewModel));
 
-            Assert.Equal(typeof(TestViewModel), info.TemplateType);
+            Assert.Equal(info.TemplateType, typeof(TestViewModel));
         }
 
         [Fact]

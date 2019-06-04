@@ -8,28 +8,42 @@ using System.Threading.Tasks;
 
 namespace RazorLight
 {
-    public class TemplateRenderer
+    public class TemplateRenderer : IDisposable
     {
         private readonly HtmlEncoder _htmlEncoder;
-        private readonly IEngineHandler _engineHandler;
-        private readonly IViewBufferScope _bufferScope;
+        private NoPoolingViewBufferScope _bufferScope;
+        private IRazorLightEngine _engine;
 
         public TemplateRenderer(
             ITemplatePage razorPage,
-			IEngineHandler engineHandler,
-            HtmlEncoder htmlEncoder,
-			IViewBufferScope bufferScope)
+            IRazorLightEngine razorEngine,
+            HtmlEncoder htmlEncoder)
         {
-            RazorPage = razorPage ?? throw new ArgumentNullException(nameof(razorPage));
-			_engineHandler = engineHandler ?? throw new ArgumentNullException(nameof(engineHandler));
-			_bufferScope = bufferScope ?? throw new ArgumentNullException(nameof(bufferScope));
-			_htmlEncoder = htmlEncoder ?? throw new ArgumentNullException(nameof(htmlEncoder));
+            if (razorPage == null)
+            {
+                throw new ArgumentNullException(nameof(razorPage));
+            }
+
+            if(razorEngine == null)
+            {
+                throw new ArgumentNullException(nameof(razorEngine));
+            }
+
+            if(razorPage == null)
+            {
+                throw new ArgumentNullException(nameof(razorPage));
+            }
+
+            _engine = razorEngine;
+            _htmlEncoder = htmlEncoder;
+
+            RazorPage = razorPage;
         }
 
         /// <summary>
         /// Gets <see cref="ITemplatePage"/> instance that the views executes on.
         /// </summary>
-        public ITemplatePage RazorPage { get; set; }
+        public ITemplatePage RazorPage { get; }
 
         ///// <summary>
         ///// Gets the sequence of _ViewStart <see cref="ITemplatePage"/> instances that are executed by this view.
@@ -40,6 +54,7 @@ namespace RazorLight
         public virtual async Task RenderAsync()
         {
             var context = RazorPage.PageContext;
+            _bufferScope = new NoPoolingViewBufferScope();
 
             var bodyWriter = await RenderPageAsync(RazorPage, context, invokeViewStarts: false).ConfigureAwait(false);
             await RenderLayoutAsync(context, bodyWriter).ConfigureAwait(false);
@@ -79,7 +94,7 @@ namespace RazorLight
             try
             {
 				//Apply engine-global callbacks
-				ExecutePageCallbacks(page, _engineHandler.Options.PreRenderCallbacks.ToList());
+				ExecutePageCallbacks(page, _engine.Options.PreRenderCallbacks.ToList());
 
 				if (invokeViewStarts)
                 {
@@ -102,9 +117,9 @@ namespace RazorLight
             page.PageContext = context;
             page.IncludeFunc = async (key, model) =>
             {
-                ITemplatePage template = await _engineHandler.CompileTemplateAsync(key);
+                ITemplatePage template = await _engine.CompileTemplateAsync(key);
 
-                await _engineHandler.RenderIncludedTemplateAsync(template, model, context.Writer, context.ViewBag, this);
+                await _engine.RenderTemplateAsync(template, model, model?.GetType(), context.Writer);
             };
             
             //_pageActivator.Activate(page, context);
@@ -175,8 +190,7 @@ namespace RazorLight
                     throw new InvalidOperationException("Layout can not be rendered");
                 }
 
-                ITemplatePage layoutPage = await _engineHandler.CompileTemplateAsync(previousPage.Layout).ConfigureAwait(false);
-				layoutPage.SetModel(context.Model);
+                ITemplatePage layoutPage = await _engine.CompileTemplateAsync(previousPage.Layout).ConfigureAwait(false);
 
                 if (renderedLayouts.Count > 0 &&
                     renderedLayouts.Any(l => string.Equals(l.Key, layoutPage.Key, StringComparison.Ordinal)))
@@ -198,6 +212,7 @@ namespace RazorLight
             }
 
             // Now we've reached and rendered the outer-most layout page. Nothing left to execute.
+
             // Ensure all defined sections were rendered or RenderBody was invoked for page without defined sections.
             foreach (var layoutPage in renderedLayouts)
             {
@@ -244,5 +259,10 @@ namespace RazorLight
 				}
 			}
 		}
+
+		public void Dispose()
+        {
+            _bufferScope?.Dispose();
+        }
     }
 }

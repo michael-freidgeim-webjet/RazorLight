@@ -3,7 +3,7 @@ using System;
 
 namespace RazorLight
 {
-    [Obsolete("Use RazorLightEngineBuilder instead", true)]
+    [Obsolete("Use RazorLightEngineBuilder instead")]
     public interface IEngineFactory
     {
         /// <summary>

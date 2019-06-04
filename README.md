@@ -41,7 +41,7 @@ To render a compiled template:
 var cacheResult = engine.TemplateCache.RetrieveTemplate("templateKey");
 if(cacheResult.Success)
 {
-    string result = await engine.RenderTemplateAsync(cacheResult.Template.TemplatePageFactory(), model);
+    string result = await engine.RenderTemplateAsync(cacheResult.Template, model);
 }
 ````
 
@@ -54,7 +54,7 @@ RazorLight can resolve templates from any source, but there are a built-in provi
 When resolving a template from filesystem, templateKey - is a relative path to the root folder, that you pass to RazorLightEngineBuilder.
 ````CSharp
 var engine = new RazorLightEngineBuilder()
-              .UseFileSystemProject("C:/RootFolder/With/YourTemplates")
+              .UseFilesystemProject("C:/RootFolder/With/YourTemplates");
               .UseMemoryCachingProvider()
               .Build();
 
@@ -72,7 +72,7 @@ var engine = new RazorLightEngineBuilder()
 
 ## Custom source
 
-If you store your templates in database - it is recommended to create custom RazorLightProject that is responsible for gettings templates source from it. The class will be used to get template source and ViewImports. RazorLight will use it to resolve Layouts, when you specify it inside the template.
+If you store your templates in database - it is recommended to create custom RazorLightProject that is responsible for gettings templages source from it. The class will be used to get template source and ViewImports. RazorLight will use it to resolve Layouts, when you specify it inside the template.
 
 ````CSharp
 var project = new EntityFrameworkRazorProject(new AppDbContext());
@@ -165,11 +165,10 @@ ____
 # FAQ
 ## I'm getting "Can't load metadata reference from the entry assembly" exception
 
-Set PreserveCompilationContext to true in your *.csproj file's PropertyGroup tag.
+Set PreserveCompilationContext to true in your *.csproj file
 
 ````XML
-<PropertyGroup>
-    ...
+<ItemGroup>
     <PreserveCompilationContext>true</PreserveCompilationContext>
-</PropertyGroup>
+</ItemGroup>
 ````

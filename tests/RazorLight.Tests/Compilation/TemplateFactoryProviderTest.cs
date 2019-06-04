@@ -1,43 +1,77 @@
 ﻿using RazorLight.Compilation;
+using RazorLight.Generation;
 using RazorLight.Razor;
-using System;
-using System.Threading.Tasks;
+using System.Reflection;
 using Xunit;
 
 namespace RazorLight.Tests
 {
-	public class TemplateFactoryProviderTest
+    public class TemplateFactoryProviderTest
     {
-		[Fact]
-		public void Ensure_FactoryReturnsValidTemplateType()
-		{
-			string templateKey = "testKey";
+        private static EmbeddedRazorProject project = new EmbeddedRazorProject(typeof(TemplateFactoryProviderTest));
 
-			var templateFactoryProvider = new TemplateFactoryProvider();
-			var descriptor = new CompiledTemplateDescriptor()
-			{
-				TemplateAttribute = new RazorLightTemplateAttribute(templateKey, typeof(TestFactoryClass)),
-				TemplateKey = templateKey
-			};
+        private TemplateFactoryProvider GetProvider()
+        {
+            var sourceGenerator = new RazorSourceGenerator(DefaultRazorEngine.Instance, project);
+            var metadataReferences = new DefaultMetadataReferenceManager();
+            var compiler = new RoslynCompilationService(metadataReferences, Assembly.GetEntryAssembly());
 
-			Func<ITemplatePage> result = templateFactoryProvider.CreateFactory(descriptor);
+            var provider = new TemplateFactoryProvider(sourceGenerator, compiler, new RazorLightOptions());
 
-			Assert.NotNull(result);
-			Assert.IsAssignableFrom<TemplatePage>(result());
-		}
+            return provider;
+        }
 
+        [Fact]
+        public void Throws_On_NullTemplateKey_ForTemplateKey()
+        {
+            var provider = GetProvider();
 
-		class TestFactoryClass : TemplatePage
-		{
-			public override Task ExecuteAsync()
-			{
-				throw new NotImplementedException();
-			}
+            Assert.ThrowsAsync<System.ArgumentNullException>(async () => await provider.CreateFactoryAsync(templateKey: null));
+        }
 
-			public override void SetModel(object model)
-			{
-				throw new NotImplementedException();
-			}
-		}
-	}
+        [Fact]
+        public void Throws_On_NullTemplateKey_ForProjectItem()
+        {
+            var provider = GetProvider();
+
+            Assert.ThrowsAsync<System.ArgumentNullException>(async () => await provider.CreateFactoryAsync(projectItem: null));
+        }
+
+		//TODO: Move this to compiler tests
+        [Fact]
+        public void Returns_Diagnostics_OnErrors()
+        {
+            var provider = GetProvider();
+
+            TemplateGenerationException ex = null;
+
+            try
+            {
+                provider.CreateFactoryAsync("Assets.Embedded.WrongRazorSyntax").GetAwaiter().GetResult();
+            }
+            catch (TemplateGenerationException exception)
+            {
+                ex = exception;
+            }
+
+            Assert.NotNull(ex);
+            Assert.NotEmpty(ex.Diagnostics);
+        }
+
+        [Fact]
+        public void Ensure_FactoryReturnsValidTemplateType()
+        {
+            var provider = GetProvider();
+            string templateKey = "Assets.Embedded.Empty";
+
+            TemplateFactoryResult result = provider.CreateFactoryAsync(templateKey).GetAwaiter().GetResult();
+            var templatePage = result.TemplatePageFactory();
+
+            Assert.NotNull(result.TemplateDescriptor);
+            Assert.NotNull(result.TemplatePageFactory);
+            Assert.NotNull(templatePage);
+
+            Assert.IsAssignableFrom<TemplatePage>(templatePage);
+        }
+    }
 }

@@ -28,7 +28,7 @@ namespace RazorLight.Tests
         [Fact]
         public void Throws_On_Null_RootPath_ForFilesystemProject()
         {
-            Action action = () => new RazorLightEngineBuilder().UseFileSystemProject(null);
+            Action action = () => new RazorLightEngineBuilder().UseFilesystemProject(null);
 
             Assert.Throws<DirectoryNotFoundException>(action);
         }
@@ -82,12 +82,12 @@ namespace RazorLight.Tests
             Assert.Throws<ArgumentNullException>(action);
         }
 
-        //[Fact]
-        //public void Compiler_OperatingAssembly_IsSetTo_EntryAssembly_If_Not_Specified()
-        //{
-        //    var engine = new RazorLightEngineBuilder().Build();
+        [Fact]
+        public void Compiler_OperatingAssembly_IsSetTo_EntryAssembly_If_Not_Specified()
+        {
+            var engine = new RazorLightEngineBuilder().Build();
 
-        //    Assert.Equal(engine.TemplateFactoryProvider.Compiler.OperatingAssembly, Assembly.GetEntryAssembly());
-        //}
+            Assert.Equal(engine.TemplateFactoryProvider.Compiler.OperatingAssembly, Assembly.GetEntryAssembly());
+        }
     }
 }

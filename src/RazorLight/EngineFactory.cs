@@ -1,9 +1,17 @@
 ﻿using System;
+using System.Reflection;
+using Microsoft.AspNetCore.Mvc.Razor.Extensions;
+using Microsoft.AspNetCore.Razor.Language;
+using Microsoft.AspNetCore.Razor.Language.Extensions;
+using RazorLight.Caching;
+using RazorLight.Compilation;
+using RazorLight.Generation;
+using RazorLight.Instrumentation;
 using RazorLight.Razor;
 
 namespace RazorLight
 {
-	[Obsolete("Use RazorLightEngineBuilder instead", true)]
+    [Obsolete("Use RazorLightEngineBuilder instead")]
     public class EngineFactory : IEngineFactory
     {
         /// <summary>
@@ -68,7 +76,17 @@ namespace RazorLight
 		/// <returns>Instance of RazorLightEngine</returns>
 		public virtual RazorLightEngine Create(RazorLightProject project, RazorLightOptions options = null)
         {
-			return null;
+            var razorOptions = options ?? new RazorLightOptions();
+
+            var sourceGenerator = new RazorSourceGenerator(DefaultRazorEngine.Instance, project, razorOptions.Namespaces);
+
+            var metadataReferenceManager = new DefaultMetadataReferenceManager(razorOptions.AdditionalMetadataReferences);
+            var compiler = new RoslynCompilationService(metadataReferenceManager, Assembly.GetEntryAssembly());
+            var templateFactoryProvider = new TemplateFactoryProvider(sourceGenerator, compiler, razorOptions);
+
+            ICachingProvider cacheProvider = new MemoryCachingProvider();
+
+            return new RazorLightEngine(razorOptions, templateFactoryProvider, cacheProvider);
         }
     }
 }

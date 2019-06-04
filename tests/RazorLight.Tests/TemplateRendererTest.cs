@@ -2,11 +2,9 @@
 using System.Collections.Generic;
 using System.Dynamic;
 using System.IO;
-using System.Text;
 using System.Text.Encodings.Web;
 using System.Threading.Tasks;
 using Moq;
-using RazorLight.Internal;
 using Xunit;
 
 namespace RazorLight.Tests
@@ -27,11 +25,11 @@ namespace RazorLight.Tests
 			};
 
 			var options = new RazorLightOptions() { PreRenderCallbacks = callbacks };
-			var engineMock = new Mock<IEngineHandler>();
+			var engineMock = new Mock<IRazorLightEngine>();
 			engineMock.SetupGet(e => e.Options).Returns(options);
 
 			//Act
-			var templateRenderer = new TemplateRenderer(page, engineMock.Object, HtmlEncoder.Default, new MemoryPoolViewBufferScope());
+			var templateRenderer = new TemplateRenderer(page, engineMock.Object, HtmlEncoder.Default);
 			await templateRenderer.RenderAsync();
 
 			//Assert
@@ -66,7 +64,7 @@ namespace RazorLight.Tests
 				v.Write("End");
 			});
 
-			var engineMock = new Mock<IEngineHandler>();
+			var engineMock = new Mock<IRazorLightEngine>();
 			engineMock.Setup(t => t.CompileTemplateAsync(It.IsAny<string>()))
 				.Returns(new Func<Task<ITemplatePage>>(() => { return Task.FromResult((ITemplatePage)layout); }));
 
@@ -84,38 +82,13 @@ namespace RazorLight.Tests
 			using (var writer = new StringWriter())
 			{
 				page.PageContext.Writer = writer;
-				var renderer = new TemplateRenderer(page, engineMock.Object, encoder, new MemoryPoolViewBufferScope());
+				var renderer = new TemplateRenderer(page, engineMock.Object, encoder);
 				await renderer.RenderAsync();
 
 				output = writer.ToString();
 			}
 
 			Assert.Equal(expected, output, StringComparer.Ordinal);
-		}
-
-		[Fact]
-		public async Task Template_Shares_Model_With_Layout()
-		{
-			var engine = new RazorLightEngineBuilder()
-				.UseEmbeddedResourcesProject(typeof(Root).Assembly, "Assets.Embedded")
-				.Build();
-
-			var model = new TestModel()
-			{
-				Value = "123"
-			};
-
-			string expected = $"Layout: {model.Value}_body: {model.Value}";
-
-			string result = await engine.CompileRenderAsync("WithModelAndLayout", model);
-			result = result.Replace(Environment.NewLine, "");
-
-			Assert.Equal(expected, result);
-		}
-
-		public class TestModel
-		{
-			public string Value { get; set; }
 		}
 	}
 }

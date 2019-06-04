@@ -20,8 +20,6 @@ namespace RazorLight
 
         protected HashSet<MetadataReference> metadataReferences;
 
-        protected HashSet<string> excludedAssemblies;
-
         protected List<Action<ITemplatePage>> prerenderCallbacks;
 
         protected RazorLightProject project;
@@ -47,24 +45,9 @@ namespace RazorLight
             return this;
         }
 
-		public RazorLightEngineBuilder UseEmbeddedResourcesProject(Assembly assembly, string rootNamespace = null)
-		{
-			project = new EmbeddedRazorProject(assembly, rootNamespace);
-
-			return this;
-		}
-
-
-		public RazorLightEngineBuilder UseFileSystemProject(string root)
+        public RazorLightEngineBuilder UseFilesystemProject(string root)
         {
             project = new FileSystemRazorProject(root);
-
-            return this;
-        }
-
-        public RazorLightEngineBuilder UseFileSystemProject(string root, string extension)
-        {
-            project = new FileSystemRazorProject(root, extension);
 
             return this;
         }
@@ -122,22 +105,6 @@ namespace RazorLight
             return this;
         }
 
-        public virtual RazorLightEngineBuilder ExcludeAssemblies(params string[] assemblyNames)
-        {
-            if (assemblyNames == null)
-            {
-                throw new ArgumentNullException(nameof(assemblyNames));
-            }
-
-            excludedAssemblies = new HashSet<string>();
-
-            foreach (var assemblyName in assemblyNames)
-            {
-                excludedAssemblies.Add(assemblyName);
-            }
-
-            return this;
-        }
         public virtual RazorLightEngineBuilder AddPrerenderCallbacks(params Action<ITemplatePage>[] callbacks)
         {
             if (callbacks == null)
@@ -158,7 +125,12 @@ namespace RazorLight
                 throw new ArgumentNullException(nameof(dynamicTemplates));
             }
 
-            this.dynamicTemplates = new ConcurrentDictionary<string, string>(dynamicTemplates);
+            this.dynamicTemplates = new ConcurrentDictionary<string, string>();
+
+            foreach (var pair in dynamicTemplates)
+            {
+                dynamicTemplates.Add(pair);
+            }
 
             return this;
         }
@@ -194,33 +166,20 @@ namespace RazorLight
                 options.AdditionalMetadataReferences = metadataReferences;
             }
 
-            if (excludedAssemblies != null)
-            {
-                options.ExcludedAssemblies = excludedAssemblies;
-            }
-
             if (prerenderCallbacks != null)
             {
                 options.PreRenderCallbacks = prerenderCallbacks;
             }
 
-			if(cachingProvider != null)
-			{
-				options.CachingProvider = cachingProvider;
-			}
+            var sourceGenerator = new RazorSourceGenerator(DefaultRazorEngine.Instance, project, options.Namespaces);
+            var metadataReferenceManager = new DefaultMetadataReferenceManager(options.AdditionalMetadataReferences);
 
-
-            var metadataReferenceManager = new DefaultMetadataReferenceManager(options.AdditionalMetadataReferences, options.ExcludedAssemblies);
             var assembly = operatingAssembly ?? Assembly.GetEntryAssembly();
+
             var compiler = new RoslynCompilationService(metadataReferenceManager, assembly);
+            var templateFactoryProvider = new TemplateFactoryProvider(sourceGenerator, compiler, options);
 
-			var sourceGenerator = new RazorSourceGenerator(DefaultRazorEngine.Instance, project, options.Namespaces);
-			var templateCompiler = new RazorTemplateCompiler(sourceGenerator, compiler, project, options);
-			var templateFactoryProvider = new TemplateFactoryProvider();
-
-			var engineHandler = new EngineHandler(options, templateCompiler, templateFactoryProvider, cachingProvider);
-
-            return new RazorLightEngine(engineHandler);
+            return new RazorLightEngine(options, templateFactoryProvider, cachingProvider);
         }
     }
 }

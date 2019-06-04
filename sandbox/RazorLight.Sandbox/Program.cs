@@ -1,27 +1,21 @@
 ﻿using System;
+using System.Diagnostics;
+using System.IO;
+using System.Threading.Tasks;
+using RazorLight.Extensions;
 using System.Threading;
 using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace RazorLight.Sandbox
 {
-	class Program
+    class Program
     {
-		public static async Task Main()
-		{
-			var engine = new RazorLightEngineBuilder()
-				.UseMemoryCachingProvider()
-				.UseEmbeddedResourcesProject(typeof(Program))
-				.Build();
+        static void Main()
+        {
+            MainAsync().GetAwaiter().GetResult();
+        }
 
-			string result = await engine.CompileRenderAsync("Views.Subfolder.A", null, null, null);
-			Console.WriteLine(result);
-
-			Console.WriteLine("Finished");
-		}
-
-		private static readonly object locker = new object();
+        private static readonly object locker = new object();
 
         private static int _j;
         public static int j
@@ -40,6 +34,40 @@ namespace RazorLight.Sandbox
                     _j = value;
                 }
             }
+        }
+
+        private static async Task MainAsync()
+        {
+            var engine = new RazorLightEngineBuilder()
+                .UseMemoryCachingProvider()
+                .Build();
+
+            List<string> results = new List<string>();
+
+            for (int i = 0; i < 100; i++)
+            {
+                ThreadPool.QueueUserWorkItem(async (s) =>
+                {
+                    try
+                    {
+                        results.Add(await engine.CompileRenderAsync("Views.Subfolder.go", null, null, null));
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine("J = " + j + " ============================\n" + e.StackTrace);
+                    }
+
+                    j++;
+                });
+            }
+
+            while(j < 100)
+            {
+                Console.WriteLine("Waiting: " + j);
+                Thread.Sleep(100);
+            }
+
+            Console.WriteLine("Finished");
         }
     }
 }

@@ -18,19 +18,14 @@ namespace RazorLight.Instrumentation
                 builder.Description = "azaza";
             });
 
-		public static RazorProjectEngineBuilder Register(RazorProjectEngineBuilder builder)
-		{
-			if (builder == null)
-			{
-				throw new ArgumentNullException(nameof(builder));
-			}
+        public static IRazorEngineBuilder Register(IRazorEngineBuilder builder)
+        {
+            builder.AddDirective(Directive);
+            builder.Features.Add(new Pass(builder.DesignTime));
+            return builder;
+        }
 
-			builder.AddDirective(Directive);
-			builder.Features.Add(new Pass());
-			return builder;
-		}
-
-		public static string GetModelType(DocumentIntermediateNode document)
+        public static string GetModelType(DocumentIntermediateNode document)
         {
             if (document == null)
             {
@@ -59,35 +54,42 @@ namespace RazorLight.Instrumentation
             return "dynamic";
         }
 
-		internal class Pass : IntermediateNodePassBase, IRazorDirectiveClassifierPass
-		{
-			// Runs after the @inherits directive
-			public override int Order => 5;
+        internal class Pass : IntermediateNodePassBase, IRazorDirectiveClassifierPass
+        {
+            private readonly bool _designTime;
 
-			protected override void ExecuteCore(RazorCodeDocument codeDocument, DocumentIntermediateNode documentNode)
-			{
-				var visitor = new Visitor();
-				var modelType = GetModelType(documentNode, visitor);
+            public Pass(bool designTime)
+            {
+                _designTime = designTime;
+            }
 
-				if (documentNode.Options.DesignTime)
-				{
-					// Alias the TModel token to a known type.
-					// This allows design time compilation to succeed for Razor files where the token isn't replaced.
-					var typeName = $"global::{typeof(object).FullName}";
-					var usingNode = new UsingDirectiveIntermediateNode()
-					{
-						Content = $"TModel = {typeName}"
-					};
+            // Runs after the @inherits directive
+            public override int Order => 5;
 
-					visitor.Namespace?.Children.Insert(0, usingNode);
-				}
+            protected override void ExecuteCore(RazorCodeDocument codeDocument, DocumentIntermediateNode documentNode)
+            {
+                var visitor = new Visitor();
+                var modelType = GetModelType(documentNode, visitor);
 
-				var baseType = visitor.Class?.BaseType?.Replace("<TModel>", "<" + modelType + ">");
-				visitor.Class.BaseType = baseType;
-			}
-		}
+                if (_designTime)
+                {
+                    // Alias the TModel token to a known type.
+                    // This allows design time compilation to succeed for Razor files where the token isn't replaced.
+                    var typeName = $"global::{typeof(object).FullName}";
+                    var usingNode = new UsingDirectiveIntermediateNode()
+                    {
+                        Content = $"TModel = {typeName}"
+                    };
 
-		private class Visitor : IntermediateNodeWalker
+                    visitor.Namespace?.Children.Insert(0, usingNode);
+                }
+
+                var baseType = visitor.Class?.BaseType?.Replace("<TModel>", "<" + modelType + ">");
+                visitor.Class.BaseType = baseType;
+            }
+        }
+
+        private class Visitor : IntermediateNodeWalker
         {
             public NamespaceDeclarationIntermediateNode Namespace { get; private set; }
 

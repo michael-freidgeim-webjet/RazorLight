@@ -11,7 +11,7 @@
     <Authors>toddams, wik8wz</Authors>
     <PackageTags>RazorLight, razor, render, dotnet-core, dotnet, core, template-engine, email, emails</PackageTags>
     <RepositoryUrl>https://github.com/wik8wz/RazorLight</RepositoryUrl>
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
     <PackageReleaseNotes>Fork of https://github.com/toddams/RazorLight fixed large html rendering issues</PackageReleaseNotes>
 	<PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
   </PropertyGroup>
@@ -30,6 +30,6 @@
     <PackageReference Include="Microsoft.Extensions.FileProviders.Physical" Version="2.0.0" />
     <PackageReference Include="Microsoft.Extensions.Primitives" Version="2.0.0" />
     <PackageReference Include="System.Buffers" Version="4.4.0" />
-	<None Include="LICENSE.txt" Pack="true" PackagePath=""/>
+	<None Include="LICENSE.txt" Pack="true" PackagePath="" />
   </ItemGroup>
 </Project>
